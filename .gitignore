@@ -1,0 +1,43 @@
+.venv/
+.claude/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.egg-info/
+.DS_Store
+*.aux
+*.log
+*.out
+missfont.log
+
+# not our content / large source docs
+neel_nanda.pdf
+sample.pdf
+
+# LaTeX sources kept out of this repo (PDFs only)
+*.tex
+
+# Modal-specific infra code
+scripts/modal_app.py
+mats/run_knockout_matrix.sh
+mats/run_remaining_matrix.sh
+mats/logs/
+
+# raw results, plots, and scratch notes
+results/
+plots/
+mats/results/
+mats/plots/
+mats/plots_track3/
+configs/
+examples/
+README_v3.md
+TASK.md
+TASK_V2.md
+TASK_V3.md
+summary.md
+summary_v2.md
+summary_v3.md
+summary_v4.md
+summary_v5.md
+summary_v6.md
