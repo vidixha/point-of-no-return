@@ -30,15 +30,52 @@ need more headroom than a 24GB card comfortably gives alongside an
 | Phi-4-mini-reasoning | Phi-3 | ~4B | L4 (24GB) |
 | Gemma 4 12B | Gemma 4 | 12B | A100 (40GB) |
 
-## Repo layout
+## Repo structure
 
 ```
-src/         intervention, model-loading, parsing, and orchestration code
-scripts/     analysis, rescoring, and figure-generation scripts
 TRACK3_REPORT.pdf   full paper
+README.md           this file
+requirements.txt    Python dependencies
+neurips_2024.sty    LaTeX style file for the report (not in this repo; see note below)
+src/                intervention, model-loading, parsing, and orchestration code
+scripts/            analysis, rescoring, figure-generation, and test scripts
 ```
 
-GPU orchestration code and raw per-run logs are not included in this repo.
+**`src/`** — the core library, imported by both the test scripts and the
+GPU orchestration code:
+
+| File | What it does |
+|---|---|
+| `injection.py` | The actual intervention: adds `alpha * v` to the residual stream at a chosen layer, at every token position, for every forward pass during generation. |
+| `vectors.py` | Builds concept-injection directions: a single contrastive-pair vector, and the multi-example contrastive vector (8 paraphrase pairs, averaged and renormalized) used throughout the paper. |
+| `model_utils.py` | Model/tokenizer loading and residual-stream module lookup (handles both standard and multimodal/"unified" architectures like Gemma 4). |
+| `parsing.py` | Scores a free-text response for concept detection/identification using transparent multilingual keyword rules (no LLM judge). |
+| `thinking_split.py` | Splits a reasoning model's raw output into its thinking block and final answer, handling both `<think>...</think>` and Gemma 4's `<\|channel>thought...<channel\|>` marker conventions. |
+| `coherence.py` | Flags degenerate/repetitive output (the "I'm a student. I'm a student..." failure mode) with a cheap n-gram heuristic, not a model judge. |
+| `run_experiment.py` | Shared utility: measures the mean residual-stream activation norm at a layer, used to set `alpha` in physically meaningful units. |
+| `generality_experiment.py` | The main experiment loop: runs the no-injection / concept-vector / random-vector conditions across templates for one model and writes result rows. |
+| `schema.py` | The CSV row schema and incremental `ResultWriter` used by the experiment loop. |
+| `config.py` | Loads the YAML concept/language/template configs (not included in this repo; see note below). |
+
+**`scripts/`** — analysis, rescoring, figure generation, and tests:
+
+| File | What it does |
+|---|---|
+| `analyze_results.py` | Computes the corrected `genuinely_valid` completion metric (accounts for the Gemma marker-closes-while-degenerate bug) across all seven models' result CSVs, producing the paper's headline numbers. |
+| `rescore_coherence.py` | Re-scores `thinking_is_degenerate`/`final_is_degenerate` in already-saved result CSVs using a corrected `coherence.py`, with no new GPU calls — how a scoring-bug fix gets applied retroactively. |
+| `make_critical_window_figure.py` | Generates the removal-ablation figure (Figure 2 / `critical_window.png`) directly from the saved removal-test JSON files. |
+| `make_track3_figures.py` | Generates the two main-results summary figures used in the report, computed from the saved result CSVs. |
+| `test_parsing.py` | Unit tests for `parsing.py`'s scoring rules against hand-written EN/ES/ZH example responses. |
+| `test_thinking_split.py` | Unit tests for the thinking/final-answer split, including both marker conventions and the truncated-budget case. |
+| `test_coherence.py` | Regression tests for `coherence.py`, covering two real bugs found and fixed while auditing the short-form-safety check. |
+
+**Not in this repo**: `scripts/modal_app.py` (the GPU orchestration code
+that actually runs experiments on Modal), `configs/` (concept/language/
+template YAML files), raw per-run result CSVs and JSON files, and
+generated plots. These are excluded deliberately (infrastructure-specific
+code and large/raw data), not accidentally — see `.gitignore`. The
+`.tex` source for the report is also excluded; only the compiled PDF
+ships here.
 
 ## Method summary
 
