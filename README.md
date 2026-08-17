@@ -78,24 +78,4 @@ python3 scripts/test_thinking_split.py    # thinking/final-answer split unit tes
 python3 scripts/test_coherence.py         # degenerate-output detection unit tests
 ```
 
-## Analyze existing results
 
-```bash
-python3 scripts/analyze_results.py results/<results_file>.csv
-```
-
-If a scoring bug is found after the fact, fix `src/parsing.py`, add a
-regression test, then re-score saved raw responses without any new GPU
-calls:
-
-```bash
-python3 scripts/rescore_coherence.py results/<results_file>.csv
-```
-
-## Reproducibility
-
-- Model revisions are pinned to exact Hugging Face commit SHAs.
-- Generation is greedy (`do_sample=False`), so outputs are deterministic
-  given the same weights and revision.
-- All raw model responses are saved unfiltered, with no manual selection
-  of "successful" examples.
